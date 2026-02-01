@@ -27,3 +27,4 @@ terraform-apply:
 
     - name: Terraform Apply (Approved Plan)
       run: terraform apply -auto-approve tfplan
+
