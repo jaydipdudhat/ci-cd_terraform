@@ -1,30 +1,67 @@
-terraform-apply:
-  needs: terraform-plan
-  runs-on: ubuntu-latest
-  environment: production   # 🔒 manual approval
+name: Terraform AWS CI/CD
 
-  steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Download Terraform Plan
-      uses: actions/download-artifact@v4
-      with:
-        name: terraform-plan
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-    - name: Terraform Init
-      run: terraform init -reconfigure
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Terraform Apply (Approved Plan)
-      run: terraform apply -auto-approve tfplan
+      - name: Terraform Init
+        run: terraform init
 
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: tfplan
+
+  terraform-apply:
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    environment: production   # 🔒 manual approval
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan
+
+      - name: Terraform Init
+        run: terraform init -reconfigure
+
+      - name: Terraform Apply (Approved Plan)
+        run: terraform apply -auto-approve tfplan
