@@ -14,7 +14,7 @@ variable "aws_instance_type" {
 variable "aws_count" {
   type        = number
   description = "Number of AWS instances to create"
-  default     = 3
+  default     = 2
   
 }
 
